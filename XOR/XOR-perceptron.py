@@ -116,7 +116,7 @@ class NeuralNetwork:
             
             
 net = NeuralNetwork(2)
-weights = net.train(np.array([[1, 1], [1, 0], [0, 1], [0, 0]]), np.array([1, 1, 1, 0]), 100000, 0.03, returnweights=True)
+weights = net.train(np.array([[1, 1], [1, 0], [0, 1], [0, 0]]), np.array([0, 1, 1, 0]), 100000, 0.03, returnweights=True)
 #net.setweights(-5.01015188, [5.47928263, 10.53872681, 5.75631169])
 #weights = net.train(np.array([[1, 1, 0], [1, 0, 1], [0, 1, 0], [0, 0, 0], [1, 1, 1], [0, 1, 1]]), np.array([1, 1, 1, 0, 1, 1]), 100000, 0.03, returnweights=True, autostop = 5)
 test_sample(net, 2, 1000)
