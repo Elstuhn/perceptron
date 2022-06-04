@@ -110,5 +110,5 @@ class NeuralNetwork:
             
     def setweights(self, biasweight : int, *weights : tensor):
         self.weightbias = biasweight 
-        for i in range(len(weights)):
+        for i in range(len(*weights)):
             self.inputlayer[i].weight = weights[0][i]
