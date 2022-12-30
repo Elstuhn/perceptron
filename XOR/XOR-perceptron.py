@@ -1,7 +1,7 @@
-
 import random 
 import numpy as np
 import typing as t
+from tqdm import tqdm
 
 tensor = t.Union[list, np.ndarray]
 
@@ -14,11 +14,14 @@ def unitstep(x):
     else:
         return 1
     
-def test_sample(net, n_features, num_sample = 10):
+def test_sample(net, n_features, num_sample = 10, operation : str = "or"):
+    """
+    operation denotes the operation that is being tested e.g AND OR XOR NOR
+    """
     for i in range(num_sample):
         nums = [random.randint(0, 1) for i in range(n_features)]
         prediction = net.test(np.array(nums))
-        print(f"{' or '.join([str(num) for num in nums])}: {prediction}")
+        print(f"{(' '+operation+' ').join([str(num) for num in nums])}: {prediction}")
     
 def gen_sample(net, n_features, num_sample = 10):
     for i in range(num_sample):
@@ -54,35 +57,35 @@ class NeuralNetwork:
     """
     X will be (batch num, n_features)
     """
-    def __init__(self, numNodes : int, weights : tensor = "random"):
+    def __init__(self, numNodes : int, weights : tensor = "random", bias : float = "random"):
         if weights == "random":
             self.inputlayer = np.array([Node() for i in range(numNodes)])
         else:
             self.inputlayer = np.array([Node(weight = weights[i]) for i in range(numNodes)])
-        self.weightbias = random.random()
-        self.activation = sigmoid
+        self.bias = random.random() if bias == "random" else bias
+        self.activation = unitstep
         self.numNodes = numNodes
         
-    def output(self, bias):
-        return self.activation(sum([i.multiplied() for i in self.inputlayer]) + bias*self.weightbias)
+    def output(self):
+        return self.activation(sum([i.multiplied() for i in self.inputlayer]) + self.bias)
     
-    def backprop(self, yhat, x, y, lr, bias):
+    def backprop(self, yhat, x, y, lr):
         for i in range(len(self.inputlayer)):
             self.inputlayer[i].weight += lr*((y-yhat)*x[i])
-            self.weightbias += lr*((y-yhat)*bias)
+            self.bias += lr*(y-yhat)
         #print(f"W1: {self.inputlayer[0].weight} W2: {self.inputlayer[1].weight} W3: {self.inputlayer[2].weight} bias: {self.weightbias}")
     
-    def train(self, X : tensor, y : tensor, epochs : int, lr = 0.005, bias = 1, returnweights = False, autostop = 0):
+    def train(self, X : tensor, y : tensor, epochs : int, lr = 0.005, returnweights = False, autostop = 0):
         lastAcc = curAcc = 0
         count = 0
         self.changeNeurons(X)
-        for epoch in range(epochs):
-            print(f"Epoch {epoch+1}")
+        for epoch in tqdm(range(epochs)):
+            #print(f"Epoch {epoch+1}")
             for ind in range(len(X)):
                 self.changeNeurons(X[ind])
-                x_i = np.insert(X[ind], self.numNodes, bias).reshape(-1,1)
-                y_hat = self.output(bias)
-                self.backprop(y_hat, x_i, y[ind], lr, bias)
+                x_i = np.insert(X[ind], self.numNodes, self.bias).reshape(-1,1)
+                y_hat = self.output()
+                self.backprop(y_hat, x_i, y[ind], lr)
                 
             if autostop:
                 if not (count-autostop):
@@ -94,26 +97,25 @@ class NeuralNetwork:
                         break
             count += 1
                 
-        if returnweights: return [self.weightbias] + [node.weight for node in self.inputlayer]
+        if returnweights: return [self.bias] + [node.weight for node in self.inputlayer]
     
     
-    def test(self, X : tensor, bias = 1):
+    def test(self, X : tensor):
         self.changeNeurons(X)
         try:
-            return round(self.output(bias)[0], 2)
+            return round(self.output()[0], 2)
         except:
-            return round(self.output(bias), 2)
+            return round(self.output(), 2)
         
           
     def changeNeurons(self, X):
         for i in range(len(self.inputlayer)):
             self.inputlayer[i].value = X[i]
             
-    def setweights(self, biasweight : int, *weights : tensor):
-        self.weightbias = biasweight 
-        for i in range(len(weights)):
+    def setweights(self, bias : float, *weights : tensor):
+        self.bias = bias 
+        for i in range(len(*weights)):
             self.inputlayer[i].weight = weights[0][i]
-            
             
 net = NeuralNetwork(2)
 weights = net.train(np.array([[1, 1], [1, 0], [0, 1], [0, 0]]), np.array([0, 1, 1, 0]), 100000, 0.03, returnweights=True)
